@@ -14,30 +14,46 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = mysqli_real_escape_string($conn, $_POST['name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Hash the password
-    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
-    $user_role = 'Client'; // Default role for new registrations
-
-    // Check if email already exists
-    $check_email = "SELECT * FROM users WHERE email = '$email'";
-    $result = $conn->query($check_email);
-
-    if ($result->num_rows > 0) {
-        $error = "Email already exists!";
+    // Add error variable to store errors
+    $error = "";
+    
+    // Validate that all required fields are present
+    if (empty($_POST['name']) || empty($_POST['email']) || empty($_POST['password'])) {
+        $error = "All fields are required";
     } else {
-        // Insert new user
-        $sql = "INSERT INTO users (name, email, password, phone_number, user_role) 
-                VALUES ('$name', '$email', '$password', '$phone', '$user_role')";
+        $name = mysqli_real_escape_string($conn, $_POST['name']);
+        $email = mysqli_real_escape_string($conn, $_POST['email']);
+        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        $user_role = 'Client';
 
-        if ($conn->query($sql) === TRUE) {
-            $_SESSION['success'] = "Registration successful! Please login.";
-            header("Location: login.php"); // Redirect to login page
-            exit();
+        // Check if email already exists
+        $check_email = "SELECT * FROM users WHERE email = ?";
+        $stmt = $conn->prepare($check_email);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $error = "Email already exists!";
         } else {
-            $error = "Error: " . $sql . "<br>" . $conn->error;
+            // Insert new user using prepared statement
+            $sql = "INSERT INTO users (name, email, password, user_role) VALUES (?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ssss", $name, $email, $password, $user_role);
+            
+            if ($stmt->execute()) {
+                $_SESSION['success'] = "Registration successful! Please login.";
+                header("Location: login.php");
+                exit();
+            } else {
+                $error = "Registration failed: " . $conn->error;
+            }
         }
+    }
+    
+    // If there's an error, display it
+    if (!empty($error)) {
+        echo "<script>alert('$error');</script>";
     }
 }
 ?>
@@ -98,8 +114,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="login-container flex items-center justify-center py-8">
         <div class="glass-form p-8 w-full max-w-md mx-4">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-white mb-2">Join TravelEase</h1>
-                <p class="text-gray-200">Start your journey with us</p>
+                <h1 class="text-3xl font-bold text-blue mb-2">Join TravelEase</h1>
+                <p class="text-blue-200">Start your journey with us</p>
             </div>
 
         

@@ -1,5 +1,7 @@
 <?php
 session_start();
+require_once 'db_connect.php';
+
 $servername = "localhost";
 $username = "root"; // Change if needed
 $password = ""; // Change if needed
@@ -7,6 +9,7 @@ $database = "travel_booking"; // Your database name
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $database);
+$error="";
 
 // Check connection
 if ($conn->connect_error) {
@@ -15,43 +18,44 @@ if ($conn->connect_error) {
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
-
-    // Prepare SQL statement to prevent SQL Injection
-    $stmt = $conn->prepare("SELECT user_id, name, email, password, user_role FROM users WHERE email = ?");
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    
+    // Prepare statement to prevent SQL injection
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
-
-    // Check if user exists
+    
     if ($result->num_rows == 1) {
-        $row = $result->fetch_assoc();
-
-        // Verify password
-        if (password_verify($password, $row['password'])) {
-            $_SESSION['user_id'] = $row['user_id'];
-            $_SESSION['name'] = $row['name'];
-            $_SESSION['email'] = $row['email'];
-            $_SESSION['user_role'] = $row['user_role'];
-
-            // Redirect user based on role
-            if ($row['user_role'] == 'Admin') {
-                header("Location: admin_dashboard.php");
-            } elseif ($row['user_role'] == 'Staff') {
-                header("Location: staff_dashboard.php");
+        $user = $result->fetch_assoc();
+        
+        if (password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['user_role'] = $user['user_role'];
+            $_SESSION['name'] = $user['name'];
+            echo $user["user_role"];
+            
+            // Redirect based on user type
+            if($user['user_role']=="Admin"){
+                header("Location:admin_dashboard.php");
+            }
+            elseif($user['user_role'] == 'Staff') {
+            header("Location: staff_dashboard.php");
             } else {
                 header("Location: home.php");
             }
             exit();
         } else {
-            $error = "Invalid password.";
+            $error="Invalid password";
         }
     } else {
-        $error = "No user found with this email.";
+        $error= "User not found";
     }
+    
     $stmt->close();
 }
+
 $conn->close();
 ?>
 
@@ -100,10 +104,9 @@ $conn->close();
     <div class="login-container flex items-center justify-center">
         <div class="glass-form p-8 w-full max-w-md mx-4">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-                <p class="text-gray-200">Sign in to continue your journey</p>
-            </div>
-            
+                <h1 class="text-3xl font-bold text-blue mb-2">Welcome Back</h1>
+                <p class="text-black-200">Sign in to continue your journey</p>
+    </div>
 
 
             <form method="POST" action="" class="space-y-6">
@@ -129,7 +132,7 @@ $conn->close();
                         <input type="checkbox" id="remember" class="h-4 w-4 rounded border-gray-300">
                         <label for="remember" class="ml-2 block text-sm text-white">Remember me</label>
                     </div>
-                    <a href="#" class="text-sm text-white hover:text-blue-200">Forgot password?</a>
+                    <a href="forgotpassword.php" class="text-sm text-white hover:text-blue-200">Forgot password?</a>
                 </div>
 
                 <button type="submit"
