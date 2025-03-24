@@ -1,53 +1,75 @@
 <?php
 session_start();
+require_once 'config.php';
 
-// Check if user is logged in and is an admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Admin') {
-    header("Location: login.php");
-    exit();
+// Validate and sanitize inputs
+$errors = [];
+
+// Name validation
+if (empty($_POST['name'])) {
+    $errors[] = "Full name is required";
+} elseif (strlen($_POST['name']) > 100) {
+    $errors[] = "Name cannot exceed 100 characters";
+} elseif (!preg_match("/^[a-zA-Z ]*$/", $_POST['name'])) {
+    $errors[] = "Name can only contain letters and spaces";
 }
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$database = "travel_booking";
-
-$conn = new mysqli($servername, $username, $password, $database);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form data
-    $name = $conn->real_escape_string($_POST['name']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Hash the password
-    $user_role = $conn->real_escape_string($_POST['user_role']);
-
+// Email validation
+if (empty($_POST['email'])) {
+    $errors[] = "Email is required";
+} elseif (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+    $errors[] = "Invalid email format";
+} else {
     // Check if email already exists
-    $check_email = "SELECT email FROM users WHERE email = '$email'";
-    $result = $conn->query($check_email);
-
+    $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
+    $stmt->bind_param("s", $_POST['email']);
+    $stmt->execute();
+    $result = $stmt->get_result();
     if ($result->num_rows > 0) {
-        $_SESSION['error'] = "Email already exists!";
-        header("Location: admin_dashboard.php");
-        exit();
+        $errors[] = "Email already exists";
     }
+}
 
-    // Insert new user
-    $sql = "INSERT INTO users (name, email, password, user_role) 
-            VALUES ('$name', '$email', '$password', '$user_role')";
+// Password validation
+if (empty($_POST['password'])) {
+    $errors[] = "Password is required";
+} elseif (strlen($_POST['password']) < 8) {
+    $errors[] = "Password must be at least 8 characters long";
+} elseif (!preg_match("/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/", $_POST['password'])) {
+    $errors[] = "Password must contain at least one uppercase letter, one lowercase letter, and one number";
+}
 
-    if ($conn->query($sql) === TRUE) {
-        $_SESSION['success'] = "New user added successfully!";
-    } else {
-        $_SESSION['error'] = "Error: " . $conn->error;
-    }
+// Role validation
+$allowed_roles = ['Client', 'Staff', 'Admin'];
+if (empty($_POST['user_role']) || !in_array($_POST['user_role'], $allowed_roles)) {
+    $errors[] = "Invalid user role selected";
+}
 
-    $conn->close();
-    header("Location: admin_dashboard.php");
+if (!empty($errors)) {
+    $_SESSION['error'] = implode("<br>", $errors);
+    header("Location: manage_users.php");
     exit();
 }
+
+// If validation passes, proceed with user creation
+try {
+    // Hash the password
+    $hashed_password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    
+    // Insert new user
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, user_role, active) VALUES (?, ?, ?, ?, 1)");
+    $stmt->bind_param("ssss", $_POST['name'], $_POST['email'], $hashed_password, $_POST['user_role']);
+    
+    if ($stmt->execute()) {
+        $_SESSION['success'] = "User created successfully";
+    } else {
+        throw new Exception("Error creating user");
+    }
+    
+} catch (Exception $e) {
+    $_SESSION['error'] = "Error: " . $e->getMessage();
+}
+
+header("Location: manage_users.php");
+exit();
 ?> 

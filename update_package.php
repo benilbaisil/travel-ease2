@@ -165,5 +165,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
     </div>
+
+    <script>
+        // Function to validate input fields
+        function validateInput(event) {
+            const value = parseFloat(event.target.value);
+            if (value < 0) {
+                event.target.setCustomValidity("Please enter a positive number.");
+            } else {
+                event.target.setCustomValidity("");
+            }
+        }
+
+        // Function to validate non-empty fields
+        function validateNonEmpty(event) {
+            if (event.target.value.trim() === "") {
+                event.target.setCustomValidity("This field cannot be empty.");
+            } else {
+                event.target.setCustomValidity("");
+            }
+        }
+
+        // Add event listeners for live validation
+        document.addEventListener("DOMContentLoaded", function() {
+            const durationInput = document.getElementById("duration");
+            const priceInput = document.getElementById("price");
+            const packageNameInput = document.getElementById("package_name");
+            const destinationInput = document.getElementById("destination");
+
+            durationInput.addEventListener("input", validateInput);
+            priceInput.addEventListener("input", validateInput);
+            packageNameInput.addEventListener("input", validateNonEmpty);
+            destinationInput.addEventListener("input", validateNonEmpty);
+            
+            // New validation for package name and destination length
+            packageNameInput.addEventListener("input", function() {
+                if (packageNameInput.value.length < 3) {
+                    packageNameInput.setCustomValidity("Package name must be at least 3 characters long.");
+                } else {
+                    packageNameInput.setCustomValidity("");
+                }
+            });
+
+            destinationInput.addEventListener("input", function() {
+                if (destinationInput.value.length < 3) {
+                    destinationInput.setCustomValidity("Destination must be at least 3 characters long.");
+                } else {
+                    destinationInput.setCustomValidity("");
+                }
+            });
+        });
+    </script>
 </body>
 </html> 

@@ -26,6 +26,12 @@ $packages = [];
 while ($row = $packages_result->fetch_assoc()) {
     $packages[] = $row;
 }
+
+// Get all package names for JavaScript validation
+$package_names = array_map(function($package) {
+    return strtolower($package['package_name']);
+}, $packages);
+$package_names_json = json_encode($package_names);
 ?>
 
 <!DOCTYPE html>
@@ -373,12 +379,6 @@ while ($row = $packages_result->fetch_assoc()) {
                     </a>
                 </li>
                 <li>
-                    <a href="manage_bookings.php">
-                        <i class="fas fa-calendar-check"></i>
-                        Bookings
-                    </a>
-                </li>
-                <li>
                     <a href="packages.php">
                         <i class="fas fa-box"></i>
                         Packages
@@ -436,10 +436,12 @@ while ($row = $packages_result->fetch_assoc()) {
                                 <div class="form-group">
                                     <label for="package_name">Package Name:</label>
                                     <input type="text" id="package_name" name="package_name" required>
+                                    <small id="nameError" style="color: red; display: none;">Package name is required.</small>
                                 </div>
                                 <div class="form-group">
                                     <label for="destination">Destination:</label>
                                     <input type="text" id="destination" name="destination" required>
+                                    <small id="destinationError" style="color: red; display: none;">Destination is required.</small>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -450,10 +452,12 @@ while ($row = $packages_result->fetch_assoc()) {
                                 <div class="form-group">
                                     <label for="price">Price:</label>
                                     <input type="number" id="price" name="price" min="0" step="0.01" required>
+                                    <small id="priceError" style="color: red; display: none;">Price must be a positive number.</small>
                                 </div>
                                 <div class="form-group">
                                     <label for="duration">Duration (days):</label>
                                     <input type="number" id="duration" name="duration" min="1" required>
+                                    <small id="durationError" style="color: red; display: none;">Duration must be at least 1 day.</small>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -484,7 +488,7 @@ while ($row = $packages_result->fetch_assoc()) {
                                 <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($package['destination']); ?></p>
                                 <p><i class="fas fa-clock"></i> <?php echo htmlspecialchars($package['duration']); ?> days</p>
                             </div>
-                            <div class="package-price">$<?php echo number_format($package['price'], 2); ?></div>
+                            <div class="package-price">₹<?php echo number_format($package['price'], 2, '.', ','); ?></div>
                             <div class="package-actions">
                                 <button onclick="editPackage(<?php echo $package['id']; ?>)" class="edit-btn">
                                     <i class="fas fa-edit"></i> Edit
@@ -502,6 +506,8 @@ while ($row = $packages_result->fetch_assoc()) {
     </div>
 
     <script>
+        const existingPackageNames = <?php echo $package_names_json; ?>;
+        
         document.getElementById('togglePackageForm').addEventListener('click', function() {
             const packageForm = document.getElementById('packageForm');
             const button = this;
@@ -608,6 +614,48 @@ while ($row = $packages_result->fetch_assoc()) {
                     message.remove();
                 }, 500);
             }, 5000);
+        });
+
+        document.querySelector('.add-package-form').addEventListener('submit', function(e) {
+            const packageName = document.getElementById('package_name').value.trim().toLowerCase();
+            
+            if (existingPackageNames.includes(packageName)) {
+                e.preventDefault();
+                alert('A package with this name already exists. Please choose a different name.');
+                document.getElementById('nameError').textContent = 'This package name already exists.';
+                document.getElementById('nameError').style.display = 'block';
+                return false;
+            }
+        });
+
+        document.getElementById('package_name').addEventListener('input', function() {
+            const nameError = document.getElementById('nameError');
+            const packageName = this.value.trim().toLowerCase();
+            
+            if (packageName === '') {
+                nameError.textContent = 'Package name is required.';
+                nameError.style.display = 'block';
+            } else if (existingPackageNames.includes(packageName)) {
+                nameError.textContent = 'This package name already exists.';
+                nameError.style.display = 'block';
+            } else {
+                nameError.style.display = 'none';
+            }
+        });
+
+        document.getElementById('destination').addEventListener('input', function() {
+            const destinationError = document.getElementById('destinationError');
+            destinationError.style.display = this.value.trim() === '' ? 'block' : 'none';
+        });
+
+        document.getElementById('price').addEventListener('input', function() {
+            const priceError = document.getElementById('priceError');
+            priceError.style.display = this.value <= 0 ? 'block' : 'none';
+        });
+
+        document.getElementById('duration').addEventListener('input', function() {
+            const durationError = document.getElementById('durationError');
+            durationError.style.display = this.value < 1 ? 'block' : 'none';
         });
     </script>
 </body>

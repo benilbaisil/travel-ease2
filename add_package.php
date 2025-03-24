@@ -20,12 +20,26 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $package_name = $conn->real_escape_string($_POST['package_name']);
+    $package_name = trim($_POST['package_name']);
     $description = $conn->real_escape_string($_POST['description']);
     $price = floatval($_POST['price']);
     $duration = intval($_POST['duration']);
     $destination = $conn->real_escape_string($_POST['destination']);
     
+    // Check if package name already exists
+    $check_query = "SELECT COUNT(*) as count FROM travel_packages WHERE LOWER(package_name) = LOWER(?)";
+    $stmt = $conn->prepare($check_query);
+    $stmt->bind_param("s", $package_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+
+    if ($row['count'] > 0) {
+        $_SESSION['error'] = "A package with this name already exists.";
+        header("Location: packages.php");
+        exit();
+    }
+
     // Create uploads directory if it doesn't exist
     $upload_dir = 'uploads/packages/';
     if (!file_exists($upload_dir)) {

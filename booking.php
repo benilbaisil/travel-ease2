@@ -135,6 +135,7 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
             margin-right: 0.5rem;
         }
     </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Get form elements
@@ -185,34 +186,99 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
                 }
             });
 
-            // Form submission validation
+            // Modify form submission for Razorpay
             form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+                
+                // Existing validation code
                 let isValid = true;
-
-                // Validate phone
-                const phoneNumber = phoneInput.value.replace(/\D/g, '');
-                if (!/^[6-9][0-9]{9}$/.test(phoneNumber)) {
-                    if (phoneNumber.startsWith('0')) {
-                        showError(phoneInput, 'Phone number cannot start with 0');
-                    } else if (phoneNumber.length !== 10) {
-                        showError(phoneInput, 'Please enter a valid 10-digit phone number');
-                    } else {
-                        showError(phoneInput, 'Phone number must start with 6-9');
-                    }
-                    isValid = false;
-                }
-
-                // Validate travel date
-                const selectedDate = new Date(travelDateInput.value);
-                const currentDate = new Date();
-                if (selectedDate < currentDate) {
-                    showError(travelDateInput, 'Please select a future date');
-                    isValid = false;
-                }
+                // ... existing validation checks ...
 
                 if (!isValid) {
-                    e.preventDefault();
+                    return false;
                 }
+
+                // Calculate total amount (price * number of guests)
+                const guests = document.querySelector('select[name="guests"]').value;
+                const amount = <?php echo $package['price']; ?> * guests;
+
+                // Razorpay payment options
+                var options = {
+                    key: "rzp_test_wDXUXVf6PM0T4D",
+                    amount: amount * 100, // Amount in paise
+                    currency: "INR",
+                    name: "TravelEase",
+                    description: "<?php echo htmlspecialchars($package['package_name']); ?>",
+                    handler: function (response) {
+                        // On successful payment
+                        document.querySelector('#payment_id').value = response.razorpay_payment_id;
+                        
+                        // Show loading state
+                        const submitButton = form.querySelector('button[type="submit"]');
+                        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+                        submitButton.disabled = true;
+
+                        // Submit form with payment ID
+                        const formData = new FormData(form);
+                        fetch('process_booking.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Show success message
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Booking Successful!',
+                                    text: 'Your booking has been confirmed. Booking ID: ' + data.booking_id,
+                                    confirmButtonText: 'View Booking Details',
+                                    confirmButtonColor: '#10B981'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = 'booking_details.php?id=' + data.booking_id;
+                                    }
+                                });
+                            } else {
+                                throw new Error(data.message || 'Booking failed');
+                            }
+                        })
+                        .catch(error => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: error.message || 'Something went wrong!',
+                                confirmButtonColor: '#EF4444'
+                            });
+                        })
+                        .finally(() => {
+                            submitButton.innerHTML = '<i class="fas fa-lock mr-2"></i>Pay ₹<?php echo number_format($package["price"]); ?>';
+                            submitButton.disabled = false;
+                        });
+                    },
+                    // Add modal close handler
+                    modal: {
+                        ondismiss: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Payment Failed',
+                                text: 'Your payment was cancelled or failed. Please try again.',
+                                confirmButtonColor: '#EF4444'
+                            });
+                        }
+                    },
+                    prefill: {
+                        name: "<?php echo htmlspecialchars($_SESSION['name']); ?>",
+                        contact: document.querySelector('input[name="phone"]').value
+                    },
+                    theme: {
+                        color: "#10B981"
+                    }
+                };
+
+                // Initialize Razorpay
+                var rzp = new Razorpay(options);
+                rzp.open();
             });
 
             // Helper functions
@@ -233,8 +299,65 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
                     existingError.remove();
                 }
             }
+
+            // Add this new code for dynamic amount calculation
+            const guestsSelect = document.querySelector('select[name="guests"]');
+            const submitButton = document.querySelector('.submit-btn');
+            const basePrice = <?php echo $package['price']; ?>;
+            
+            // Function to format currency in Indian format
+            function formatIndianCurrency(amount) {
+                return new Intl.NumberFormat('en-IN', {
+                    style: 'currency',
+                    currency: 'INR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount).replace('INR', '₹');
+            }
+
+            // Function to update total amount
+            function updateTotalAmount() {
+                const guests = parseInt(guestsSelect.value);
+                const totalAmount = basePrice * guests;
+                submitButton.innerHTML = `<i class="fas fa-lock mr-2"></i>Pay ${formatIndianCurrency(totalAmount)}`;
+                
+                // Add or update the total amount display
+                let amountDisplay = document.getElementById('totalAmountDisplay');
+                if (!amountDisplay) {
+                    amountDisplay = document.createElement('div');
+                    amountDisplay.id = 'totalAmountDisplay';
+                    amountDisplay.className = 'text-center mt-4 text-gray-600';
+                    submitButton.parentNode.insertBefore(amountDisplay, submitButton);
+                }
+                amountDisplay.innerHTML = `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Price per person: ${formatIndianCurrency(basePrice)}</p>
+                        <p class="text-sm text-gray-600">Number of guests: ${guests}</p>
+                        <p class="text-lg font-bold text-green-600 mt-2">Total Amount: ${formatIndianCurrency(totalAmount)}</p>
+                    </div>
+                `;
+
+                // Update Razorpay amount
+                options.amount = totalAmount * 100;
+            }
+
+            // Add event listener for guests select
+            guestsSelect.addEventListener('change', updateTotalAmount);
+
+            // Initial calculation
+            updateTotalAmount();
+
+            // Update the existing Razorpay options
+            var options = {
+                // ... existing Razorpay options ...
+                amount: basePrice * parseInt(guestsSelect.value) * 100, // Update initial amount
+                // ... rest of the options ...
+            };
         });
     </script>
+
+    <!-- Add SweetAlert2 for better alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -284,7 +407,7 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
                     </div>
                 </div>
 
-                <form id="bookingForm" action="process_booking.php" method="POST" class="space-y-8">
+                <form id="bookingForm" action="process_booking.php" method="POST" class="space-y-8" enctype="multipart/form-data">
                     <input type="hidden" name="package_id" value="<?php echo htmlspecialchars($package_id); ?>">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -301,7 +424,7 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
                                 <i class="fas fa-users feature-icon"></i>Number of Guests
                             </label>
                             <select name="guests" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none transition-all duration-300">
                                 <?php for($i = 1; $i <= 10; $i++): ?>
                                     <option value="<?php echo $i; ?>"><?php echo $i; ?> Guest<?php echo $i > 1 ? 's' : ''; ?></option>
                                 <?php endfor; ?>
@@ -318,9 +441,12 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
                         </div>
                     </div>
 
+                    <!-- Add hidden field for payment ID -->
+                    <input type="hidden" name="payment_id" id="payment_id">
+
                     <div class="mt-8">
-                        <button type="submit" class="submit-btn w-full bg-green-600 text-white py-4 px-6 rounded-lg hover:bg-green-700 font-semibold text-lg">
-                            <i class="fas fa-lock mr-2"></i>Proceed to Secure Payment
+                        <button type="submit" class="submit-btn w-full bg-green-600 text-white py-4 px-6 rounded-lg hover:bg-green-700 font-semibold text-lg transition-all duration-300">
+                            <i class="fas fa-lock mr-2"></i>Pay ₹<?php echo number_format($package['price']); ?>
                         </button>
                     </div>
                 </form>

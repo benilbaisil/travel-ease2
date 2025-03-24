@@ -29,16 +29,20 @@ while ($row = $users_result->fetch_assoc()) {
     $users[] = $row;
 }
 
-// Fetch packages - with admin check and error handling
+// Update the packages count query to use travel_packages table
+$package_count = $conn->query("SELECT COUNT(*) as total FROM travel_packages");
+$total_packages = $package_count->fetch_assoc()['total'];
+
+// Add this after the query to debug
+if (!$package_count) {
+    echo "Error: " . $conn->error;
+}
+
+// Update the packages query to get all packages
+$packages_result = $conn->query("SELECT * FROM travel_packages");
 $packages = [];
-if ($_SESSION['user_role'] === 'Admin') {
-    $packages_result = $conn->query("SHOW TABLES LIKE 'packages'");
-    if ($packages_result->num_rows > 0) {
-        $packages_result = $conn->query("SELECT id, package_name, description, price, duration, destination FROM packages ORDER BY package_name");
-        while ($row = $packages_result->fetch_assoc()) {
-            $packages[] = $row;
-        }
-    }
+while ($row = $packages_result->fetch_assoc()) {
+    $packages[] = $row;
 }
 
 // Add admin check for package actions
@@ -52,294 +56,250 @@ $enable_package_actions = isset($_SESSION['enable_package_actions']) && $_SESSIO
 <head>
     <title>Admin Dashboard</title>
 
-
     <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<style>
-    /* Main Layout */
-body {
-    margin: 0;
-    font-family: 'Arial', sans-serif;
-    background-color: #f5f6fa;
-}
 
-.dashboard-layout {
-    display: flex;
-    min-height: 100vh;
-}
+    <!-- Add these styles to your existing CSS -->
+    <style>
+        /* Modern Color Scheme */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
 
-/* Sidebar Styles */
-.sidebar {
-    width: 250px;
-    background-color: #2c3e50;
-    color: white;
-    padding: 20px 0;
-    position: fixed;
-    height: 100vh;
-}
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+        }
 
-.sidebar-header {
-    padding: 0 20px;
-    margin-bottom: 30px;
-}
+        /* Enhanced Dashboard Layout */
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
 
-.nav-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+        /* Modernized Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--primary-gradient);
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            box-shadow: 5px 0 20px rgba(0, 0, 0, 0.1);
+        }
 
-.nav-links li a {
-    display: flex;
-    align-items: center;
-    padding: 12px 15px;
-    color: white;
-    text-decoration: none;
-    transition: background-color 0.3s;
-}
+        .sidebar-header {
+            padding: 0 2rem;
+            margin-bottom: 2rem;
+        }
 
-.nav-links li a:hover {
-    background-color: #34495e;
-}
+        .sidebar-header h2 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
 
-.nav-links i {
-    margin-right: 10px;
-    width: 20px;
-    text-align: center;
-}
+        .nav-links li a {
+            display: flex;
+            align-items: center;
+            padding: 1rem 2rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            font-weight: 500;
+        }
 
-/* Main Content Area */
-.main-content {
-    flex: 1;
-    margin-left: 250px;
-    padding: 20px;
-}
+        .nav-links li a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #10b981;
+            transform: translateX(5px);
+        }
 
-.dashboard-container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
+        .nav-links li a i {
+            margin-right: 1rem;
+            font-size: 1.25rem;
+        }
 
-.header {
-    margin-bottom: 30px;
-}
+        /* Enhanced Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
 
-.header h1 {
-    color: #2c3e50;
-    margin: 0;
-}
+        /* Modern Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
 
-/* Stats Cards */
-.stats-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
+        .stat-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                       0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
 
-.stat-card {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    text-align: center;
-}
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+        }
 
-.stat-card h3 {
-    margin: 0 0 10px 0;
-    color: #7f8c8d;
-    font-size: 16px;
-}
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                       0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
 
-.stat-card p {
-    margin: 0;
-    color: #2c3e50;
-    font-size: 24px;
-    font-weight: bold;
-}
+        .stat-card h3 {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-/* Users List Table */
-.users-list {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
+        .stat-card p {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-.users-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
+        /* Enhanced Tables */
+        .users-list {
+            background: var(--card-background);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
 
-.users-table th,
-.users-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
+        .users-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
 
-.users-table th {
-    background-color: #f8f9fa;
-    color: #2c3e50;
-    font-weight: 600;
-}
+        .users-table th {
+            background: #f8fafc;
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #e2e8f0;
+        }
 
-.users-table tr:hover {
-    background-color: #f8f9fa;
-}
+        .users-table td {
+            padding: 1rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid #e2e8f0;
+        }
 
-/* Action Buttons */
-.actions-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
+        .users-table tr:hover td {
+            background: #f1f5f9;
+        }
 
-.action-button {
-    padding: 12px 20px;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
-}
+        /* Modern Action Buttons */
+        .action-button {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 0.875rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+        }
 
-.action-button:hover {
-    background-color: #2980b9;
-}
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px -2px rgba(99, 102, 241, 0.3);
+        }
 
-/* Package Form Section */
-.package-form-section {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+        .action-button i {
+            font-size: 1rem;
+        }
 
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
 
-.toggle-btn {
-    padding: 8px 16px;
-    background-color: #2ecc71;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
 
-.toggle-btn:hover {
-    background-color: #27ae60;
-}
+        .section-header h2 i {
+            color: #6366f1;
+        }
 
-.add-package-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+        /* Add animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
 
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
+        .stats-container > *, .users-list {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
 
-.form-group label {
-    font-weight: 600;
-    color: #2c3e50;
-}
+        .stats-container > *:nth-child(1) { animation-delay: 0.1s; }
+        .stats-container > *:nth-child(2) { animation-delay: 0.2s; }
+        .stats-container > *:nth-child(3) { animation-delay: 0.3s; }
+    </style>
 
-.form-group input,
-.form-group textarea {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.form-group textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
-.submit-btn {
-    padding: 12px 24px;
-    background-color: #2ecc71;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
-    align-self: flex-start;
-}
-
-.submit-btn:hover {
-    background-color: #27ae60;
-}
-
-/* Package Actions Buttons */
-.edit-btn, .delete-btn {
-    padding: 6px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 5px;
-    color: white;
-}
-
-.edit-btn {
-    background-color: #3498db;
-}
-
-.delete-btn {
-    background-color: #e74c3c;
-}
-
-.edit-btn:hover {
-    background-color: #2980b9;
-}
-
-.delete-btn:hover {
-    background-color: #c0392b;
-}
-
-/* Add these styles to your existing CSS */
-.package-action:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-/* Add these styles to your existing CSS */
-select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    width: 100%;
-}
-
-.form-group select {
-    height: 40px;
-}
-</style>
+    <!-- Add this in your HTML head section -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="dashboard-layout">
@@ -358,12 +318,6 @@ select {
                     <a href="manage_users.php">
                         <i class="fas fa-users"></i>
                         Users
-                    </a>
-                </li>
-                <li>
-                    <a href="manage_bookings.php">
-                        <i class="fas fa-calendar-check"></i>
-                        Bookings
                     </a>
                 </li>
                 <li>
@@ -391,16 +345,39 @@ select {
         
         <div class="main-content">
             <div class="dashboard-container">
-                <div class="header">
-                    <h1>Dashboard Overview</h1>
+                <div class="section-header">
+                    <h2>
+                        <i class="fas fa-chart-line"></i>
+                        Dashboard Overview
+                    </h2>
                 </div>
 
                 <div class="stats-container">
                     <div class="stat-card">
-                        <h3>Total Users</h3>
+                        <h3>
+                            <i class="fas fa-users" style="color: #6366f1;"></i>
+                            Total Users
+                        </h3>
                         <p><?php echo $users_count; ?></p>
                     </div>
-                    <!-- Add more stat cards as needed -->
+                    
+                    <div class="stat-card">
+                        <h3>
+                            <i class="fas fa-box" style="color: #8b5cf6;"></i>
+                            Total Packages
+                        </h3>
+                        <p><?php echo $total_packages; ?></p>
+                    </div>
+                    
+                    <!-- <div class="stat-card">
+                        <h3>
+                            <i class="fas fa-chart-bar" style="color: #10b981;"></i>
+                            Active Packages
+                        </h3>
+                        <p><?php echo count(array_filter($packages, function($p) { 
+                            return isset($p['status']) && $p['status'] === 'active'; 
+                        })); ?></p>
+                    </div> -->
                 </div>
 
                 <!-- Add this new section for user list -->
@@ -434,9 +411,9 @@ select {
                 <div class="users-list" id="packagesSection">
                     <div class="section-header">
                         <h2>Travel Packages</h2>
-                        <button id="togglePackageActions" class="toggle-btn" style="margin-right: 10px;">
+                        <!-- <button id="togglePackageActions" class="toggle-btn" style="margin-right: 10px;">
                             <?php echo $enable_package_actions ? 'Disable Actions' : 'Enable Actions'; ?>
-                        </button>
+                        </button> -->
                     </div>
                     <table class="users-table">
                         <thead>
@@ -445,7 +422,7 @@ select {
                                 <th>Destination</th>
                                 <th>Price</th>
                                 <th>Duration</th>
-                                <th>Actions</th>
+                                <!-- <th>Actions</th> -->
                             </tr>
                         </thead>
                         <tbody>
@@ -453,16 +430,19 @@ select {
                             <tr data-package-id="<?php echo $package['id']; ?>">
                                 <td><?php echo htmlspecialchars($package['package_name']); ?></td>
                                 <td><?php echo htmlspecialchars($package['destination']); ?></td>
-                                <td>$<?php echo htmlspecialchars($package['price']); ?></td>
+                                <td>₹<?php 
+                                    $formatted_price = preg_replace("/(\d+?)(?=(\d\d)+(\d)(?!\d))(\.\d+)?/i", "$1,", $package['price']);
+                                    echo $formatted_price; 
+                                ?></td>
                                 <td><?php echo htmlspecialchars($package['duration']); ?> days</td>
-                                <td>
+                                <!-- <td>
                                     <button class="edit-btn package-action" onclick="editPackage(<?php echo $package['id']; ?>)" <?php echo !$enable_package_actions ? 'disabled' : ''; ?>>
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
                                     <button class="delete-btn package-action" onclick="deletePackage(<?php echo $package['id']; ?>)" <?php echo !$enable_package_actions ? 'disabled' : ''; ?>>
                                         <i class="fas fa-trash"></i> Delete
                                     </button>
-                                </td>
+                                </td> -->
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -474,9 +454,6 @@ select {
                     <button class="action-button" onclick="location.href='manage_users.php'">
                         Manage Users
                     </button>
-                    <button class="action-button" onclick="location.href='manage_bookings.php'">
-                        Manage Bookings
-                    </button>
                     <button class="action-button" onclick="location.href='packages.php'">
                         Manage Packages
                     </button>
@@ -486,7 +463,7 @@ select {
                 </div>
 
                 <!-- Add Package Form Section -->
-                <?php if ($_SESSION['user_role'] === 'Admin'): ?>
+                <!-- <?php if ($_SESSION['user_role'] === 'Admin'): ?>
                 <div class="package-form-section">
                     <div class="section-header">
                         <h2>Add New Travel Package</h2>
@@ -511,8 +488,8 @@ select {
                                     <label for="duration">Duration (days):</label>
                                     <input type="number" id="duration" name="duration" min="1" required>
                                 </div>
-                            </div>
-                            <div class="form-group">
+                            </div> -->
+                            <!-- <div class="form-group">
                                 <label for="destination">Destination:</label>
                                 <input type="text" id="destination" name="destination" required>
                             </div>
@@ -523,11 +500,11 @@ select {
                             <button type="submit" class="submit-btn">Add Package</button>
                         </form>
                     </div>
-                </div>
+                </div> -->
                 <?php endif; ?>
 
                 <!-- Add User Form Section -->
-                <?php if ($_SESSION['user_role'] === 'Admin'): ?>
+                <!-- <?php if ($_SESSION['user_role'] === 'Admin'): ?>
                 <div class="package-form-section">
                     <div class="section-header">
                         <h2>Add New User</h2>
@@ -561,7 +538,7 @@ select {
                             </div>
                             <button type="submit" class="submit-btn">Add User</button>
                         </form>
-                    </div>
+                    </div> -->
                 </div>
                 <?php endif; ?>
             </div>

@@ -66,9 +66,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TravelEase - Register</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
         .login-container {
-            background-image: url('/travel ease/img/beautiful-shot-mountains-cloudy-sky-from-inside-plane-windows.jpg');
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                url('img/flat-lay-travel-essentials-with-copy-space.jpg');
             background-size: cover;
             background-position: center;
             min-height: 100vh;
@@ -76,37 +82,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         
         .glass-form {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
             border-radius: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
         }
 
         .form-input {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
 
         .form-input::placeholder {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
         }
 
         .form-input:focus {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
             outline: none;
             border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
         }
 
         .error-message {
-            color: #ff4444;
+            color: #ff6b6b;
             font-size: 0.875rem;
             margin-top: 0.25rem;
             display: none;
+            font-weight: 500;
         }
 
         .form-input.error {
-            border-color: #ff4444;
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(45deg, #3b82f6, #2563eb);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        button[type="submit"]:hover {
+            background: linear-gradient(45deg, #2563eb, #1d4ed8);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
         }
     </style>
 </head>
@@ -114,8 +140,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="login-container flex items-center justify-center py-8">
         <div class="glass-form p-8 w-full max-w-md mx-4">
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-blue mb-2">Join TravelEase</h1>
-                <p class="text-blue-200">Start your journey with us</p>
+                <h1 class="text-4xl font-bold text-white mb-2">Join TravelEase</h1>
+                <p class="text-blue-100 text-lg">Start your journey with us</p>
             </div>
 
         
@@ -163,7 +189,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </button>
 
                 <div class="text-center text-white mt-4">
-                    <p>Already have an account? <a href="login.php" class="text-blue-300 hover:text-blue-200">Sign in here</a></p>
+                    <p class="text-gray-200">Already have an account? 
+                        <a href="login.php" class="text-blue-300 hover:text-blue-200 font-medium hover:underline transition duration-300">
+                            Sign in here
+                        </a>
+                    </p>
                 </div>
             </form>
         </div>

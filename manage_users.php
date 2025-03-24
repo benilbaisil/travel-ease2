@@ -19,11 +19,22 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch all users
-$users_result = $conn->query("SELECT user_id, name, email, user_role FROM users ORDER BY name");
-$users = [];
-while ($row = $users_result->fetch_assoc()) {
-    $users[] = $row;
+// Fetch all users (with fallback if 'active' column doesn't exist)
+try {
+    $users_result = $conn->query("SELECT user_id, name, email, user_role, active FROM users ORDER BY name");
+    $users = [];
+    while ($row = $users_result->fetch_assoc()) {
+        $users[] = $row;
+    }
+} catch (mysqli_sql_exception $e) {
+    // If 'active' column doesn't exist, fetch without it
+    $users_result = $conn->query("SELECT user_id, name, email, user_role FROM users ORDER BY name");
+    // Add default 'active' value to results
+    $users = [];
+    while ($row = $users_result->fetch_assoc()) {
+        $row['active'] = 1; // Set default value as active
+        $users[] = $row;
+    }
 }
 ?>
 
@@ -329,6 +340,75 @@ while ($row = $users_result->fetch_assoc()) {
                 transform: translateY(0);
             }
         }
+
+        .activate-btn,
+        .deactivate-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .activate-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .activate-btn:hover {
+            background-color: #169b6b;
+        }
+
+        .deactivate-btn {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .deactivate-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .validation-feedback {
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .password-strength {
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(78, 115, 223, 0.25);
+        }
+
+        .role-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .role-badge.admin {
+            background-color: #4e73df;
+            color: white;
+        }
+
+        .role-badge.staff {
+            background-color: #1cc88a;
+            color: white;
+        }
+
+        .role-badge.client {
+            background-color: #858796;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -349,12 +429,6 @@ while ($row = $users_result->fetch_assoc()) {
                     <a href="manage_users.php">
                         <i class="fas fa-users"></i>
                         Users
-                    </a>
-                </li>
-                <li>
-                    <a href="manage_bookings.php">
-                        <i class="fas fa-calendar-check"></i>
-                        Bookings
                     </a>
                 </li>
                 <li>
@@ -432,7 +506,7 @@ while ($row = $users_result->fetch_assoc()) {
                                     <select id="user_role" name="user_role" required>
                                         <option value="Client">Client</option>
                                         <option value="Staff">Staff</option>
-                                        <option value="Admin">Admin</option>
+                                        <!-- <option value="Admin">Admin</option> -->
                                     </select>
                                 </div>
                             </div>
@@ -458,18 +532,15 @@ while ($row = $users_result->fetch_assoc()) {
                                 <td><?php echo htmlspecialchars($user['name']); ?></td>
                                 <td><?php echo htmlspecialchars($user['email']); ?></td>
                                 <td>
-                                    <select class="user-role-select" onchange="updateUserRole(<?php echo $user['user_id']; ?>, this.value)">
-                                        <option value="Client" <?php echo $user['user_role'] === 'Client' ? 'selected' : ''; ?>>Client</option>
-                                        <option value="Staff" <?php echo $user['user_role'] === 'Staff' ? 'selected' : ''; ?>>Staff</option>
-                                        <option value="Admin" <?php echo $user['user_role'] === 'Admin' ? 'selected' : ''; ?>>Admin</option>
-                                    </select>
+                                    <span class="role-badge <?php echo strtolower($user['user_role']); ?>">
+                                        <?php echo htmlspecialchars($user['user_role']); ?>
+                                    </span>
                                 </td>
                                 <td class="action-buttons">
-                                    <button class="edit-btn" onclick="editUser(<?php echo $user['user_id']; ?>)">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button class="delete-btn" onclick="deleteUser(<?php echo $user['user_id']; ?>)">
-                                        <i class="fas fa-trash"></i> Delete
+                                    <button class="<?php echo $user['active'] ? 'deactivate-btn' : 'activate-btn'; ?>" 
+                                            onclick="toggleUserStatus(<?php echo $user['user_id']; ?>, <?php echo $user['active'] ? 'false' : 'true'; ?>)">
+                                        <i class="fas <?php echo $user['active'] ? 'fa-user-slash' : 'fa-user-check'; ?>"></i>
+                                        <?php echo $user['active'] ? 'Deactivate' : 'Activate'; ?>
                                     </button>
                                 </td>
                             </tr>
@@ -537,31 +608,27 @@ while ($row = $users_result->fetch_assoc()) {
             }, 5000);
         });
 
-        function editUser(userId) {
-            // Redirect to edit user page
-            window.location.href = 'edit_user.php?id=' + userId;
-        }
-
-        function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-                fetch('delete_user.php', {
+        function toggleUserStatus(userId, setActive) {
+            const action = setActive ? 'activate' : 'deactivate';
+            if (confirm(`Are you sure you want to ${action} this user?`)) {
+                fetch('toggle_user_status.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: 'user_id=' + userId
+                    body: `user_id=${userId}&active=${setActive ? 1 : 0}`
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert(data.message || 'Error deleting user');
+                        alert(data.message || `Error ${action}ing user`);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting user. Please try again.');
+                    alert(`Error ${action}ing user. Please try again.`);
                 });
             }
         }
@@ -586,6 +653,122 @@ while ($row = $users_result->fetch_assoc()) {
                 alert('Error updating user role. Please try again.');
                 location.reload();
             });
+        }
+
+        // Add this to your existing JavaScript
+        document.getElementById('userForm').querySelector('form').addEventListener('submit', function(e) {
+            let errors = [];
+            
+            // Name validation
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                errors.push("Full name is required");
+            } else if (name.length > 100) {
+                errors.push("Name cannot exceed 100 characters");
+            } else if (!/^[a-zA-Z ]*$/.test(name)) {
+                errors.push("Name can only contain letters and spaces");
+            }
+            
+            // Email validation
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                errors.push("Email is required");
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errors.push("Invalid email format");
+            }
+            
+            // Modified password validation (removed special character requirement)
+            const password = document.getElementById('password').value;
+            if (!password) {
+                errors.push("Password is required");
+            } else if (password.length < 8) {
+                errors.push("Password must be at least 8 characters long");
+            } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
+                errors.push("Password must contain at least one uppercase letter, one lowercase letter, and one number");
+            }
+            
+            // Show errors if any
+            if (errors.length > 0) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    html: errors.join('<br>'),
+                    confirmButtonColor: '#4e73df'
+                });
+            }
+        });
+
+        // Add real-time validation feedback
+        function addValidationFeedback(inputId, validationFunction, errorMessage) {
+            const input = document.getElementById(inputId);
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'validation-feedback';
+            feedbackDiv.style.fontSize = '0.8rem';
+            feedbackDiv.style.marginTop = '5px';
+            input.parentNode.appendChild(feedbackDiv);
+
+            input.addEventListener('input', function() {
+                const isValid = validationFunction(this.value);
+                if (!isValid) {
+                    feedbackDiv.style.color = '#e74a3b';
+                    feedbackDiv.textContent = errorMessage;
+                    this.style.borderColor = '#e74a3b';
+                } else {
+                    feedbackDiv.style.color = '#1cc88a';
+                    feedbackDiv.textContent = '✓ Looks good!';
+                    this.style.borderColor = '#1cc88a';
+                }
+            });
+        }
+
+        // Initialize real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Name validation
+            addValidationFeedback(
+                'name',
+                value => value.trim().length > 0 && value.trim().length <= 100 && /^[a-zA-Z ]*$/.test(value),
+                'Name must contain only letters and spaces'
+            );
+
+            // Email validation
+            addValidationFeedback(
+                'email',
+                value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+                'Please enter a valid email address'
+            );
+
+            // Modified password validation feedback
+            addValidationFeedback(
+                'password',
+                value => value.length >= 8 && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}$/.test(value),
+                'Password must be at least 8 characters long and contain uppercase, lowercase, and number'
+            );
+
+            // Add password strength indicator
+            const passwordInput = document.getElementById('password');
+            const strengthIndicator = document.createElement('div');
+            strengthIndicator.className = 'password-strength';
+            strengthIndicator.style.height = '5px';
+            strengthIndicator.style.marginTop = '5px';
+            strengthIndicator.style.transition = 'all 0.3s';
+            passwordInput.parentNode.appendChild(strengthIndicator);
+
+            passwordInput.addEventListener('input', function() {
+                const strength = calculatePasswordStrength(this.value);
+                const colors = ['#e74a3b', '#f6c23e', '#1cc88a'];
+                strengthIndicator.style.backgroundColor = colors[strength];
+                strengthIndicator.style.width = ((strength + 1) * 33.33) + '%';
+            });
+        });
+
+        // Password strength calculator
+        function calculatePasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/.test(password)) strength++;
+            if (/[@$!%*?&]/.test(password)) strength++;
+            return Math.min(strength, 2);
         }
     </script>
 </body>

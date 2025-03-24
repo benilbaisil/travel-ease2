@@ -8,6 +8,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'Staff') {
     exit();
 }
 
+// Add this code block to fetch unread notifications count
+$unread_count = 0; // Default value
+$sql_notifications = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0";
+$stmt = $conn->prepare($sql_notifications);
+if ($stmt) {
+    $stmt->bind_param("i", $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result) {
+        $unread_count = $result->fetch_assoc()['count'];
+    }
+    $stmt->close();
+}
+
 // Handle package updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_package'])) {
     $travel_packages_id = $_POST['package_id'];
@@ -45,6 +59,27 @@ if ($result_users) {
         $users[] = $row;
     }
     $users_count = count($users);
+}
+
+// Replace Python-style function definitions with PHP function definitions
+function upload_aadhaar($user_id, $document) {
+    // Save the document for verification
+    save_document($user_id, $document);
+    notify_staff_for_verification($user_id);
+}
+
+function verify_aadhaar($user_id) {
+    // Staff verifies the document
+    mark_document_as_verified($user_id);
+    notify_user_for_payment($user_id);
+}
+
+function make_payment($user_id) {
+    if (is_document_verified($user_id)) {
+        process_payment($user_id);
+    } else {
+        throw new Exception("Document not verified yet.");
+    }
 }
 ?>
 
@@ -370,10 +405,12 @@ if ($result_users) {
     /* Header Improvements */
     .header {
         margin-bottom: 2rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e5e7eb;
     }
 
     .header h1 {
-        font-size: 2rem;
+        font-size: 1.875rem;
         font-weight: 600;
         color: var(--text-dark);
         margin: 0;
@@ -666,6 +703,153 @@ if ($result_users) {
             padding: 0.75rem;
         }
     }
+
+    /* Add these to your existing styles */
+    .notification-icon {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #ef4444;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 12px;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .notification-dropdown {
+        position: absolute;
+        right: 0;
+        top: 45px;
+        width: 320px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+        z-index: 1000;
+        display: none;
+    }
+
+    .notification-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .notification-header h3 {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .mark-all-read {
+        color: #3b82f6;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    .notification-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .notification-item {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e5e7eb;
+        transition: background-color 0.2s;
+    }
+
+    .notification-item:hover {
+        background-color: #f3f4f6;
+    }
+
+    .notification-item.unread {
+        background-color: #f0f9ff;
+    }
+
+    .notification-item p {
+        color: #374151;
+        font-size: 0.875rem;
+        margin-bottom: 4px;
+    }
+
+    .notification-time {
+        color: #6b7280;
+        font-size: 0.75rem;
+    }
+
+    .no-notifications {
+        padding: 15px;
+        text-align: center;
+        color: #6b7280;
+    }
+
+    /* Add these new styles */
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .notification-wrapper {
+        position: relative;
+    }
+
+    .notification-bell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #f3f4f6;
+        transition: background-color 0.3s ease;
+    }
+
+    .notification-bell:hover {
+        background-color: #e5e7eb;
+    }
+
+    .notification-bell i {
+        font-size: 1.25rem;
+        color: #4b5563;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #ef4444;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 12px;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+
+    .notification-dropdown {
+        position: absolute;
+        right: 0;
+        top: 45px;
+        width: 320px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+        z-index: 1000;
+        display: none;
+    }
     </style>
 </head>
 <body>
@@ -694,6 +878,12 @@ if ($result_users) {
                     </a>
                 </li>
                 <li>
+                    <a href="enquiry.php">
+                        <i class="fas fa-file-alt"></i>
+                        Enquiry
+                    </a>
+                </li>
+                <li>
                     <button onclick="window.location.href='logout.php'" class="logout-btn">
                         <i class="fas fa-sign-out-alt"></i>
                         <span>Logout</span>
@@ -705,7 +895,46 @@ if ($result_users) {
         <div class="main-content">
             <div class="dashboard-container">
                 <div class="header">
-                    <h1>Staff Dashboard</h1>
+                    <div class="header-content">
+                        <h1>Staff Dashboard</h1>
+                        <div class="notification-wrapper">
+                            <button type="button" onclick="toggleNotifications(event)" class="notification-bell">
+                                <i class="fas fa-bell"></i>
+                                <?php if ($unread_count > 0): ?>
+                                    <span class="notification-badge"><?php echo $unread_count; ?></span>
+                                <?php endif; ?>
+                            </button>
+                            <div id="notificationDropdown" class="notification-dropdown" style="display: none;">
+                                <div class="notification-header">
+                                    <h3>Notifications</h3>
+                                    <?php if ($unread_count > 0): ?>
+                                        <a href="mark_all_read.php" class="mark-all-read">Mark all as read</a>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="notification-list">
+                                    <?php
+                                    $sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 5";
+                                    $stmt = $conn->prepare($sql);
+                                    $stmt->bind_param("i", $_SESSION['user_id']);
+                                    $stmt->execute();
+                                    $notifications = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+                                    
+                                    if (empty($notifications)): ?>
+                                        <p class="no-notifications">No notifications</p>
+                                    <?php else:
+                                        foreach ($notifications as $notification): ?>
+                                            <div class="notification-item <?php echo $notification['is_read'] ? '' : 'unread'; ?>">
+                                                <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                                                <span class="notification-time">
+                                                    <?php echo date('M d, H:i', strtotime($notification['created_at'])); ?>
+                                                </span>
+                                            </div>
+                                        <?php endforeach;
+                                    endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <?php if (isset($_SESSION['success'])): ?>
@@ -812,12 +1041,12 @@ if ($result_users) {
                                     <span><i class="fas fa-rupee-sign"></i> <?php echo number_format($travel_packages['price'], 2); ?></span>
                                 </div>
                                 <div class="package-actions">
-                                    <button onclick="editPackage(<?php echo $travel_packages['id']; ?>)" class="edit-btn">
+                                    <!-- <button onclick="editPackage(<?php echo $travel_packages['id']; ?>)" class="edit-btn">
                                         <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button onclick="deletePackage(<?php echo $travel_packages['id']; ?>)" class="delete-btn">
+                                    </button> -->
+                                    <!-- <button onclick="deletePackage(<?php echo $travel_packages['id']; ?>)" class="delete-btn">
                                         <i class="fas fa-trash"></i> Delete
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                         </div>
@@ -1053,6 +1282,31 @@ if ($result_users) {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             submitBtn.disabled = true;
         });
+
+        function toggleNotifications(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('notificationDropdown');
+            if (dropdown.style.display === 'none') {
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        // Close dropdown when clicking anywhere else on the page
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const notificationIcon = event.target.closest('.notification-icon');
+            
+            if (!notificationIcon && dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Prevent dropdown from closing when clicking inside it
+        document.getElementById('notificationDropdown').addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
     </script>
 </body>
-</html> 
+</html>
