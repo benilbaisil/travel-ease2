@@ -224,7 +224,22 @@ echo "<!-- Debug: Available packages = " . implode(', ', array_keys($packages)) 
                             method: 'POST',
                             body: formData
                         })
-                        .then(response => response.json())
+                        .then(response => {
+                            // Clone the response so we can use it twice if needed
+                            const responseClone = response.clone();
+                            
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            
+                            // Try to parse as JSON, but fallback to text if it fails
+                            return response.json()
+                                .catch(() => {
+                                    return responseClone.text().then(text => {
+                                        throw new Error('Invalid JSON response: ' + text);
+                                    });
+                                });
+                        })
                         .then(data => {
                             if (data.success) {
                                 // Show success message

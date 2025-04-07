@@ -55,16 +55,27 @@ try {
     $phone = $_POST['phone'];
     $payment_id = $_POST['payment_id'];
     
-    // Calculate total amount
-    $package_query = "SELECT price FROM travel_packages WHERE id = ?";
-    $stmt_price = $conn->prepare($package_query);
-    $stmt_price->bind_param("i", $package_id);
-    $stmt_price->execute();
-    $price_result = $stmt_price->get_result();
-    $package_price = $price_result->fetch_assoc()['price'];
+    // Check if package is active before proceeding
+    $check_sql = "SELECT price, package_name, destination, active FROM travel_packages WHERE id = ? AND active = 1";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("i", $package_id);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+
+    if ($result->num_rows === 0) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'This package is no longer available for booking.'
+        ]);
+        exit();
+    }
+
+    // Get package details from the result
+    $package = $result->fetch_assoc();
+    $package_price = $package['price'];
     $total_amount = $package_price * $guests;
 
-    $stmt->bind_param("iissssd",
+    $stmt->bind_param("iisissd",
         $user_id,
         $package_id,
         $travel_date,

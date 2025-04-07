@@ -109,27 +109,195 @@ function make_payment($user_id) {
         color: var(--text-dark);
     }
 
-    /* Improved Sidebar */
+    /* Enhanced Sidebar Styles */
     .sidebar {
-        background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+        width: 280px;
+        background: linear-gradient(165deg, #2D3250 0%, #1a237e 100%);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+        position: fixed;
+        height: 100vh;
+        left: 0;
+        top: 0;
+        overflow-y: auto;
+        z-index: 1000;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .sidebar-header {
-        padding: 2rem 1.5rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 1rem;
     }
 
-    .nav-links li a {
-        margin: 0.5rem 1rem;
-        padding: 0.75rem 1rem;
-        border-radius: 8px;
+    .sidebar-header h2 {
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar-header h2::before {
+        content: '';
+        width: 8px;
+        height: 24px;
+        background: linear-gradient(to bottom, #00f2fe, #4facfe);
+        border-radius: 4px;
+    }
+
+    .nav-links {
+        padding: 0.5rem;
+        list-style: none;
+        margin: 0;
+    }
+
+    .nav-links li {
+        margin: 0.5rem 0;
+    }
+
+    .nav-links li a, .logout-btn {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
         transition: all 0.3s ease;
+        border-radius: 12px;
+        margin: 0.3rem 0.8rem;
+        position: relative;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .nav-links li a:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+    .nav-links li a:hover, .logout-btn:hover {
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
         transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .nav-links li a.active {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-links li a i, .logout-btn i {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 1.2rem;
+        background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-links li a:hover i, .logout-btn:hover i {
+        transform: scale(1.2);
+    }
+
+    .nav-links li a::after, .logout-btn::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), transparent);
+        transition: width 0.3s ease;
+    }
+
+    .nav-links li a:hover::after, .logout-btn:hover::after {
+        width: 100%;
+    }
+
+    .logout-btn {
+        margin-top: 2rem;
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+
+    .logout-btn:hover {
+        background: rgba(255, 107, 107, 0.1);
+        border-color: rgba(255, 107, 107, 0.5);
+    }
+
+    .logout-btn i {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Add smooth scrollbar for sidebar */
+    .sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Active menu item indicator */
+    .nav-links li a.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 60%;
+        background: linear-gradient(to bottom, #00f2fe, #4facfe);
+        border-radius: 0 2px 2px 0;
+    }
+
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+
+        .nav-links li {
+            width: calc(50% - 1rem);
+            margin: 0.5rem;
+        }
+
+        .nav-links li a, .logout-btn {
+            margin: 0;
+            padding: 0.8rem;
+            justify-content: center;
+        }
+
+        .nav-links li a i, .logout-btn i {
+            margin-right: 8px;
+        }
     }
 
     /* Enhanced Stats Cards */
@@ -335,59 +503,6 @@ function make_payment($user_id) {
         min-height: 100vh;
     }
 
-    /* Enhanced Sidebar Positioning */
-    .sidebar {
-        width: 260px;
-        background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
-        position: fixed;
-        height: 100vh;
-        left: 0;
-        top: 0;
-        overflow-y: auto;
-        z-index: 1000;
-    }
-
-    .sidebar-header {
-        padding: 2rem 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .sidebar-header h2 {
-        color: var(--white);
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-    }
-
-    .nav-links {
-        padding: 1rem 0;
-        list-style: none;
-        margin: 0;
-    }
-
-    .nav-links li a {
-        display: flex;
-        align-items: center;
-        padding: 0.875rem 1.5rem;
-        color: var(--white);
-        text-decoration: none;
-        transition: all 0.3s ease;
-        margin: 0.5rem 1rem;
-        border-radius: 8px;
-    }
-
-    .nav-links li a i {
-        width: 20px;
-        margin-right: 12px;
-        font-size: 1.1rem;
-    }
-
-    .nav-links li a:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        transform: translateX(5px);
-    }
-
     /* Main Content Alignment */
     .main-content {
         flex: 1;
@@ -441,69 +556,6 @@ function make_payment($user_id) {
         .main-content {
             margin-left: 220px;
         }
-    }
-
-    @media (max-width: 768px) {
-        .dashboard-layout {
-            flex-direction: column;
-        }
-
-        .sidebar {
-            width: 100%;
-            height: auto;
-            position: relative;
-        }
-
-        .main-content {
-            margin-left: 0;
-            padding: 1rem;
-        }
-
-        .nav-links {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .nav-links li {
-            width: auto;
-        }
-
-        .nav-links li a {
-            margin: 0.25rem;
-            padding: 0.5rem 1rem;
-        }
-
-        .stats-container {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Logout Button Styling */
-    .logout-btn {
-        width: 100%;
-        text-align: left;
-        background: none;
-        border: none;
-        color: var(--white);
-        padding: 0.875rem 1.5rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        margin: 0.5rem 1rem;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .logout-btn:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        transform: translateX(5px);
-    }
-
-    .logout-btn i {
-        width: 20px;
-        margin-right: 12px;
-        font-size: 1.1rem;
     }
 
     /* Add these new styles */

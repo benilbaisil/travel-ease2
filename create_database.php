@@ -95,6 +95,56 @@ if ($conn->query($sql) === TRUE) {
     echo "Error creating table: " . $conn->error . "<br>";
 }
 
+// SQL to create the payment table
+$sql = "CREATE TABLE IF NOT EXISTS payment (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    booking_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    mode ENUM('Credit Card', 'Debit Card', 'UPI', 'Net Banking', 'Cash') NOT NULL,
+    status ENUM('Success', 'Failed', 'Pending') DEFAULT 'Pending',
+    transaction_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id),
+    INDEX payment_status_idx (status),
+    INDEX payment_date_idx (created_at)
+)";
+
+if ($conn->query($sql) === TRUE) {
+    echo "Table 'payment' created successfully.<br>";
+} else {
+    echo "Error creating table: " . $conn->error . "<br>";
+}
+
+// Insert payment records for existing bookings
+$sql = "INSERT INTO payment (booking_id, amount, mode, status, transaction_id, created_at)
+        SELECT 
+            b.id as booking_id,
+            b.total_amount as amount,
+            CASE 
+                WHEN RAND() < 0.2 THEN 'Cash'
+                WHEN RAND() < 0.4 THEN 'Credit Card'
+                WHEN RAND() < 0.6 THEN 'Debit Card'
+                WHEN RAND() < 0.8 THEN 'UPI'
+                ELSE 'Net Banking'
+            END as mode,
+            CASE 
+                WHEN b.booking_status = 'Confirmed' THEN 'Success'
+                WHEN b.booking_status = 'Cancelled' THEN 'Failed'
+                ELSE 'Pending'
+            END as status,
+            CONCAT('TXN', LPAD(b.id, 8, '0')) as transaction_id,
+            b.created_at
+        FROM bookings b
+        LEFT JOIN payment p ON b.id = p.booking_id
+        WHERE p.id IS NULL";
+
+if ($conn->query($sql) === TRUE) {
+    echo "Payment records created for existing bookings successfully.<br>";
+} else {
+    echo "Error creating payment records: " . $conn->error . "<br>";
+}
+
 // First create admin user
 $admin_email = mysqli_real_escape_string($conn, "benilbaisil001@gmail.com");
 $check_admin = "SELECT * FROM users WHERE email = '$admin_email'";
@@ -134,6 +184,7 @@ if ($stmt->execute()) {
 } else {
     echo "Error inserting sample packages: " . $stmt->error . "<br>";
 }
+
 
 // SQL to create the notifications table
 $sql = "CREATE TABLE IF NOT EXISTS notifications (

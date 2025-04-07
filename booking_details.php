@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 0);
+error_reporting(0);
+
 session_start();
 require_once 'config.php';
 
@@ -107,74 +110,250 @@ if (!$booking) {
         .group:hover .group-hover\:rotate-180 {
             transform: rotate(180deg);
         }
+
+        /* Navigation Bar */
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            margin-bottom: 2rem;
+            padding: 0.5rem 2rem;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        .logo-container {
+            position: relative;
+            padding: 0.5rem 0;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #8B5CF6, #6D28D9, #5B21B6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: -1px;
+            animation: glow 3s ease-in-out infinite alternate;
+            position: relative;
+        }
+
+        .logo-underline {
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #8B5CF6, #6D28D9, #5B21B6, transparent);
+            border-radius: 2px;
+            animation: shimmer 2s infinite;
+        }
+
+        .nav-links-container {
+            background: rgba(243, 244, 246, 0.7);
+            padding: 0.75rem;
+            border-radius: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            transform-style: preserve-3d;
+        }
+
+        .nav-link {
+            color: #4b5563;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .nav-link:hover {
+            color: #6D28D9;
+            background: rgba(109, 40, 217, 0.1);
+            transform: translateY(-2px) translateZ(10px);
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.15);
+        }
+
+        .nav-link i {
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover i {
+            transform: scale(1.2) rotate(-5deg) translateZ(20px);
+        }
+
+        .active-nav {
+            color: #6D28D9;
+            background: rgba(109, 40, 217, 0.15);
+            box-shadow: 0 2px 8px rgba(109, 40, 217, 0.2);
+        }
+
+        /* Enhanced 3D Animations */
+        @keyframes glow {
+            0% {
+                text-shadow: 0 0 5px rgba(139, 92, 246, 0.2);
+                transform: translateZ(0);
+            }
+            100% {
+                text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+                transform: translateZ(10px);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% center;
+                transform: translateZ(5px);
+            }
+            100% {
+                background-position: 200% center;
+                transform: translateZ(0);
+            }
+        }
+
+        /* Floating animation with 3D effect */
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateZ(0) rotateX(0);
+            }
+            50% {
+                transform: translateY(-5px) translateZ(10px) rotateX(5deg);
+            }
+        }
+
+        .logo-container {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Enhanced hover effects with 3D */
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(139, 92, 246, 0.1),
+                transparent
+            );
+            transition: 0.5s;
+            transform: translateZ(-1px);
+        }
+
+        .nav-link:hover::before {
+            left: 100%;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .logo-text {
+                font-size: 2.5rem;
+            }
+
+            .nav-links-container {
+                flex-direction: column;
+                width: 100%;
+                padding: 0.5rem;
+            }
+
+            .nav-link {
+                width: 100%;
+                margin: 0.25rem 0;
+                justify-content: center;
+            }
+        }
+
+        /* Pulse animation with 3D effect */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(109, 40, 217, 0.4);
+                transform: translateZ(0);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(109, 40, 217, 0);
+                transform: translateZ(5px);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(109, 40, 217, 0);
+                transform: translateZ(0);
+            }
+        }
+
+        .active-nav {
+            animation: pulse 2s infinite;
+        }
+
+        /* Add sparkle effect */
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .logo-text::after {
+            content: '✨';
+            position: absolute;
+            right: -20px;
+            top: 0;
+            font-size: 1.5rem;
+            animation: sparkle 2s infinite;
+        }
+
+        /* Add subtle background pattern */
+        .nav-links-container {
+            background-image: linear-gradient(45deg, rgba(139, 92, 246, 0.05) 25%, transparent 25%),
+                              linear-gradient(-45deg, rgba(139, 92, 246, 0.05) 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, rgba(139, 92, 246, 0.05) 75%),
+                              linear-gradient(-45deg, transparent 75%, rgba(139, 92, 246, 0.05) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Navigation -->
+    <!-- Navigation Bar -->
     <nav class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <div class="text-2xl font-bold text-green-600">
-                    <i class="fas fa-plane-departure mr-2"></i>TravelEase
+            <div class="flex flex-col items-center h-auto py-4">
+                <!-- Enhanced Logo -->
+                <div class="logo-container mb-4">
+                    <div class="text-4xl font-bold logo-text">Booking Details</div>
+                    <div class="logo-underline"></div>
                 </div>
-                <div class="hidden md:flex space-x-8">
-                    <a href="home.php" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-home mr-1"></i> Home
+                
+                <!-- Enhanced Navigation -->
+                <div class="hidden md:flex space-x-6 nav-links-container">
+                    <a href="home.php" class="nav-link">
+                        <i class="fas fa-home mr-2"></i> Home
                     </a>
-                    <a href="userpackages.php" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-box mr-1"></i> Packages
+                    <a href="userpackages.php" class="nav-link">
+                        <i class="fas fa-box mr-2"></i> Packages
                     </a>
-                    <a href="my_bookings.php" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-calendar-check mr-1"></i> My Bookings
+                    <a href="my_bookings.php" class="nav-link">
+                        <i class="fas fa-bookmark mr-2"></i> My Bookings
                     </a>
-                    <a href="home.php#about" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-info-circle mr-1"></i> About
+                    <a href="home.php#about" class="nav-link">
+                        <i class="fas fa-info-circle mr-2"></i> About Us
                     </a>
-                    <a href="home.php#contact" class="text-gray-700 hover:text-blue-600">
-                        <i class="fas fa-envelope mr-1"></i> Contact
+                    <a href="home.php#enquiry" class="nav-link">
+                        <i class="fas fa-envelope mr-2"></i> Contact
                     </a>
-                </div>
-                <div class="flex items-center space-x-6">
-                    <a href="notifications.php" class="text-gray-700 hover:text-blue-600 relative">
-                        <i class="fas fa-bell text-xl"></i>
-                        <?php
-                        // Get unread notifications count
-                        $sql = "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0";
-                        $stmt = $conn->prepare($sql);
-                        $stmt->bind_param("i", $_SESSION['user_id']);
-                        $stmt->execute();
-                        $result = $stmt->get_result();
-                        $count = $result->fetch_assoc()['count'];
-                        
-                        if ($count > 0) {
-                            echo '<span class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">' . $count . '</span>';
-                        }
-                        ?>
-                    </a>
-                    
-                    <!-- User Menu -->
-                    <div class="relative group">
-                        <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
-                            <i class="fas fa-user-circle text-xl"></i>
-                            <span class="font-medium"><?php echo htmlspecialchars($_SESSION['name']); ?></span>
-                            <i class="fas fa-chevron-down text-sm transition-transform duration-200 group-hover:rotate-180"></i>
-                        </button>
-                        
-                        <!-- Dropdown Menu -->
-                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden group-hover:block z-50">
-                            <div class="px-4 py-2 border-b border-gray-100">
-                                <p class="text-sm font-medium text-gray-900">Signed in as</p>
-                                <p class="text-sm text-gray-600 truncate"><?php echo htmlspecialchars($_SESSION['name']); ?></p>
-                            </div>
-                            <a href="my_bookings.php" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50">
-                                <i class="fas fa-calendar mr-2"></i> My Bookings
-                            </a>
-                            <div class="border-t border-gray-100 my-1"></div>
-                            <a href="logout.php" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Logout
-                            </a>
-                        </div>
-                    </div>
+                    <!-- <div class="relative">
+                        <a href="notifications.php" class="nav-link">
+                            <i class="fas fa-bell mr-2"></i> Notifications
+                            <span class="notification-badge absolute -top-1 -right-1 inline-block w-4 h-4 bg-red-600 text-white text-xs rounded-full text-center hidden"></span>
+                        </a>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -306,5 +485,34 @@ if (!$booking) {
             </div>
         </div>
     </footer>
+
+    <!-- Add this right before the closing </body> tag -->
+    <script>
+        // Function to fetch notification count
+        function fetchNotificationCount() {
+            fetch('get_notification_count.php')
+                .then(response => response.json())
+                .then(data => {
+                    const notificationBadge = document.querySelector('.notification-badge');
+                    if (notificationBadge) {
+                        if (data.count > 0) {
+                            notificationBadge.textContent = data.count;
+                            notificationBadge.classList.remove('hidden');
+                        } else {
+                            notificationBadge.classList.add('hidden');
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching notification count:', error));
+        }
+
+        // Fetch notification count when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchNotificationCount();
+            
+            // Refresh notification count every 30 seconds
+            setInterval(fetchNotificationCount, 30000);
+        });
+    </script>
 </body>
 </html> 

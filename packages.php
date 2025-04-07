@@ -276,19 +276,173 @@ $package_names_json = json_encode($package_names);
         }
 
         .toggle-btn {
-            background-color: var(--success-color);
-            color: white;
-            border: none;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             padding: 10px 20px;
-            border-radius: 8px;
+            border: none;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            backdrop-filter: blur(4px);
         }
 
-        .toggle-btn:hover {
-            background-color: #169b6b;
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 50%, #15803d 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3),
+                        0 0 0 2px rgba(34, 197, 94, 0.1),
+                        inset 0 -3px 0 rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn.inactive {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3),
+                        0 0 0 2px rgba(220, 38, 38, 0.1),
+                        inset 0 -3px 0 rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn:hover.active {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
             transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4),
+                        0 0 0 3px rgba(34, 197, 94, 0.2),
+                        inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn:hover.inactive {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4),
+                        0 0 0 3px rgba(220, 38, 38, 0.2),
+                        inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent,
+                rgba(255, 255, 255, 0.6),
+                transparent
+            );
+            transition: 0.6s;
+        }
+
+        .toggle-btn:hover::before {
+            left: 100%;
+        }
+
+        .toggle-btn i {
+            font-size: 1.2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+        }
+
+        .toggle-btn:hover i {
+            transform: rotate(180deg) scale(1.2);
+        }
+
+        .toggle-btn.active i {
+            color: #ecfdf5;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .toggle-btn.inactive i {
+            color: #fef2f2;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .status-text {
+            display: inline-block;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            position: relative;
+        }
+
+        .toggle-btn:hover .status-text {
+            transform: translateX(3px);
+            letter-spacing: 1px;
+        }
+
+        .toggle-btn::after {
+            content: '';
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 8px;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .toggle-btn.active::after {
+            background-color: #4ade80;
+            box-shadow: 0 0 12px #4ade80,
+                       0 0 20px rgba(74, 222, 128, 0.4);
+        }
+
+        .toggle-btn.inactive::after {
+            background-color: #f87171;
+            box-shadow: 0 0 12px #f87171,
+                       0 0 20px rgba(248, 113, 113, 0.4);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes toggleAnimation {
+            0% { transform: scale(1) translateY(0); }
+            40% { transform: scale(0.95) translateY(3px); }
+            80% { transform: scale(1.05) translateY(-2px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+
+        .toggle-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+                       inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6),
+                       0 0 0 6px rgba(var(--focus-color, 34, 197, 94), 0.4);
+        }
+
+        @keyframes loading {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toggle-btn.loading::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: loading 0.8s linear infinite;
         }
 
         .success-message,
@@ -356,6 +510,153 @@ $package_names_json = json_encode($package_names);
         .default-image i {
             font-size: 3em;
             color: #adb5bd;
+        }
+
+        .status-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-btn.active {
+            background: linear-gradient(145deg, #10b981, #059669);
+            color: white;
+        }
+
+        .status-btn.inactive {
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .status-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .status-btn:active {
+            transform: translateY(0);
+        }
+
+        .status-btn i {
+            font-size: 1.1em;
+            transition: transform 0.3s ease;
+        }
+
+        .status-btn:hover i {
+            transform: scale(1.1);
+        }
+
+        .status-btn.active:hover {
+            background: linear-gradient(145deg, #059669, #047857);
+        }
+
+        .status-btn.inactive:hover {
+            background: linear-gradient(145deg, #dc2626, #b91c1c);
+        }
+
+        /* Custom Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-container {
+            background-color: white;
+            border-radius: 15px;
+            width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transform: scale(0.9);
+            animation: scaleIn 0.3s ease forwards;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .close-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .modal-content {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .cancel-btn, .confirm-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .cancel-btn {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .cancel-btn:hover {
+            background-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+
+        .confirm-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+            color: white;
+        }
+
+        .confirm-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 115, 223, 0.3);
         }
     </style>
 </head>
@@ -493,14 +794,33 @@ $package_names_json = json_encode($package_names);
                                 <button onclick="editPackage(<?php echo $package['id']; ?>)" class="edit-btn">
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
-                                <button onclick="deletePackage(<?php echo $package['id']; ?>)" class="delete-btn">
-                                    <i class="fas fa-trash"></i> Delete
+                                <button onclick="togglePackageStatus(<?php echo $package['id']; ?>, <?php echo $package['active']; ?>)" 
+                                        class="status-btn <?php echo $package['active'] ? 'active' : 'inactive'; ?>">
+                                    <i class="fas fa-toggle-<?php echo $package['active'] ? 'on' : 'off'; ?>"></i>
+                                    <?php echo $package['active'] ? 'Deactivate' : 'Activate'; ?>
                                 </button>
                             </div>
                         </div>
                     </div>
                     <?php endforeach; ?>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add custom popup modal -->
+    <div id="confirmationModal" class="modal-overlay" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Confirm Action</h3>
+                <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-content">
+                <p>Are you sure you want to change this package status?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+                <button id="confirmButton" class="confirm-btn">Confirm</button>
             </div>
         </div>
     </div>
@@ -540,44 +860,27 @@ $package_names_json = json_encode($package_names);
             window.location.href = 'edit_package.php?id=' + packageId;
         }
 
-        function deletePackage(packageId) {
-            // Create a modal for confirmation
-            const modal = document.createElement('div');
-            modal.innerHTML = `
-                <div class="modal-overlay">
-                    <div class="modal-content">
-                        <p>Do you really want to delete this package?</p>
-                        <button id="confirmDelete" class="toggle-btn">Yes</button>
-                        <button id="cancelDelete" class="toggle-btn">No</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-
-            // Center the modal
-            const overlay = document.querySelector('.modal-overlay');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-            overlay.style.zIndex = '1001';
-
-            const content = document.querySelector('.modal-content');
-            content.style.backgroundColor = 'white';
-            content.style.padding = '20px';
-            content.style.borderRadius = '8px';
-            content.style.textAlign = 'center';
-
-            document.getElementById('confirmDelete').onclick = function() {
+        function togglePackageStatus(packageId, currentStatus) {
+            // Store current package info for later use
+            const packageData = {
+                id: packageId,
+                status: currentStatus
+            };
+            
+            // Show the custom modal
+            const modal = document.getElementById('confirmationModal');
+            modal.style.display = 'flex';
+            
+            // Setup confirm button action
+            const confirmBtn = document.getElementById('confirmButton');
+            confirmBtn.onclick = function() {
+                closeModal();
+                
                 const formData = new FormData();
-                formData.append('id', packageId);
+                formData.append('package_id', packageData.id);
+                formData.append('status', packageData.status === 1 ? 0 : 1);
 
-                fetch('delete_package.php', {
+                fetch('toggle_package_status.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -586,20 +889,19 @@ $package_names_json = json_encode($package_names);
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert(data.message || 'Error deleting package');
+                        alert(data.message || 'Failed to update package status');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting package. Please try again.');
+                    alert('Error updating package status');
                 });
-
-                document.body.removeChild(modal); // Remove modal after confirmation
             };
-
-            document.getElementById('cancelDelete').onclick = function() {
-                document.body.removeChild(modal); // Remove modal on cancel
-            };
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('confirmationModal');
+            modal.style.display = 'none';
         }
 
         // Animate success/error messages

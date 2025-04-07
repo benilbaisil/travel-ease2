@@ -537,11 +537,17 @@ try {
                                     </span>
                                 </td>
                                 <td class="action-buttons">
-                                    <button class="<?php echo $user['active'] ? 'deactivate-btn' : 'activate-btn'; ?>" 
-                                            onclick="toggleUserStatus(<?php echo $user['user_id']; ?>, <?php echo $user['active'] ? 'false' : 'true'; ?>)">
-                                        <i class="fas <?php echo $user['active'] ? 'fa-user-slash' : 'fa-user-check'; ?>"></i>
-                                        <?php echo $user['active'] ? 'Deactivate' : 'Activate'; ?>
-                                    </button>
+                                    <?php if ($user['user_role'] === 'Admin'): ?>
+                                        <button class="deactivate-btn" disabled title="Admin accounts cannot be deactivated" style="opacity: 0.6; cursor: not-allowed;">
+                                            <i class="fas fa-lock"></i> Cannot Deactivate Admin
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="<?php echo $user['active'] ? 'deactivate-btn' : 'activate-btn'; ?>" 
+                                                onclick="toggleUserStatus(<?php echo $user['user_id']; ?>, <?php echo $user['active'] ? 'false' : 'true'; ?>)">
+                                            <i class="fas <?php echo $user['active'] ? 'fa-user-slash' : 'fa-user-check'; ?>"></i>
+                                            <?php echo $user['active'] ? 'Deactivate' : 'Activate'; ?>
+                                        </button>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

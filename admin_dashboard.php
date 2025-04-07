@@ -63,6 +63,15 @@ $enable_package_actions = isset($_SESSION['enable_package_actions']) && $_SESSIO
     <style>
         /* Modern Color Scheme */
         :root {
+            --primary-color: #4e73df;
+            --success-color: #1cc88a;
+            --info-color: #36b9cc;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --secondary-color: #858796;
+            --light-color: #f8f9fc;
+            --dark-color: #5a5c69;
+            
             --primary-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
@@ -89,17 +98,23 @@ $enable_package_actions = isset($_SESSION['enable_package_actions']) && $_SESSIO
 
         /* Modernized Sidebar */
         .sidebar {
-            width: 280px;
-            background: var(--primary-gradient);
-            padding: 2rem 0;
+            width: 250px;
+            background: linear-gradient(180deg, var(--primary-color), var(--info-color));
             position: fixed;
             height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
             box-shadow: 5px 0 20px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar-header {
-            padding: 0 2rem;
-            margin-bottom: 2rem;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 0;
         }
 
         .sidebar-header h2 {
@@ -111,10 +126,15 @@ $enable_package_actions = isset($_SESSION['enable_package_actions']) && $_SESSIO
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
+        .nav-links {
+            list-style: none;
+            padding: 20px 0;
+        }
+
         .nav-links li a {
             display: flex;
             align-items: center;
-            padding: 1rem 2rem;
+            padding: 15px 25px;
             color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             transition: all 0.3s ease;
@@ -129,15 +149,19 @@ $enable_package_actions = isset($_SESSION['enable_package_actions']) && $_SESSIO
         }
 
         .nav-links li a i {
-            margin-right: 1rem;
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
             font-size: 1.25rem;
         }
 
         /* Enhanced Main Content */
         .main-content {
             flex: 1;
-            margin-left: 280px;
-            padding: 2rem;
+            margin-left: 250px;
+            padding: 30px;
+            background-color: #f8f9fc;
+            min-height: 100vh;
         }
 
         /* Modern Stats Cards */

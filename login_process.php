@@ -6,6 +6,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
+    // Debug incoming data
+    error_log("Login attempt - Email: $email");
+
     $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -19,15 +22,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_role'] = $user['user_role'];
             $_SESSION['user_name'] = $user['name'];
-            echo $user['user_role'];
+            
+            // Debug session after setting
+            error_log("Session set - User ID: {$_SESSION['user_id']}, Role: {$_SESSION['user_role']}");
 
             // Redirect based on user role
-            if ($user['user_role'] == 'Admin') {
-                header("Location: admin_dashboard.php");
-            } elseif ($user['user_role'] == 'Staff') {
-                header("Location: staff_dashboard.php");
+            if ($user['user_role'] == 'Admin' || $user['user_role'] == 'Staff') {
+                header("Location: packages.php");
             } else {
-                // header("Location: home.php"); // Regular users go to homepage
+                header("Location: index.php");
             }
             exit();
         } else {

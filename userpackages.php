@@ -1,4 +1,4 @@
-<?php
+l<?php
 session_start();
 require_once 'config.php';
 
@@ -15,23 +15,257 @@ if (isset($_GET['search'])) {
     $searchQuery = $_GET['search'];
 }
 
-// Modify SQL query to include search condition
-$sql = "SELECT * FROM travel_packages WHERE package_name LIKE ? ORDER BY id";
-$stmt = $conn->prepare($sql);
-$searchTerm = '%' . $searchQuery . '%';
-$stmt->bind_param('s', $searchTerm);
-$stmt->execute();
-$result = $stmt->get_result();
+// Fetch packages based on search query or show all active packages
+if (!empty($searchQuery)) {
+    $searchParam = "%" . $searchQuery . "%";
+    $sql = "SELECT * FROM travel_packages WHERE active = 1 AND (package_name LIKE ? OR destination LIKE ? OR description LIKE ?) ORDER BY id DESC";
+    
+    // Prepare statement to prevent SQL injection
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sss", $searchParam, $searchParam, $searchParam);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    // If no search, fetch all active packages
+    $sql = "SELECT * FROM travel_packages WHERE active = 1 ORDER BY id DESC";
+    $result = $conn->query($sql);
+}
+
+$travel_packages = [];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $travel_packages[] = $row;
+    }
+}
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Travel Packages - TravelEase</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f6f7f9 0%, #e9edf4 100%);
+            min-height: 100vh;
+        }
+
+        /* Enhanced Header Container */
+        .header-container {
+            background: linear-gradient(135deg, #ffffff, #f3f4f6);
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Logo Styles */
+        .logo-container {
+            text-align: center;
+            padding: 1rem 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-text {
+            font-size: 2.8rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #22c55e, #16a34a, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            position: relative;
+            letter-spacing: -1px;
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        .logo-text::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #22c55e, #16a34a, #059669, transparent);
+            border-radius: 2px;
+            animation: shimmer 2s infinite;
+        }
+
+        /* Navigation Menu */
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1rem;
+            margin: 1rem auto;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 2;
+        }
+
+        .nav-link {
+            color: #4b5563;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-link:hover i {
+            transform: scale(1.2);
+        }
+
+        .nav-link.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Search Container */
+        .search-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-button {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Page Title */
+        .page-title {
+            text-align: center;
+            margin: 3rem 0;
+            font-size: 2.5rem;
+            color: #1f2937;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #2563eb, #3b82f6);
+            border-radius: 2px;
+        }
+
+        /* Animations */
+        @keyframes glow {
+            0% { text-shadow: 0 0 5px rgba(34, 197, 94, 0.2); }
+            100% { text-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-container {
+                padding: 1rem 0;
+            }
+
+            .logo-text {
+                font-size: 2.2rem;
+            }
+
+            .nav-menu {
+                flex-direction: column;
+                padding: 0.5rem;
+                gap: 0.5rem;
+                margin: 1rem;
+            }
+
+            .nav-link {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .search-container {
+                flex-direction: column;
+                margin: 1rem;
+            }
+
+            .search-button {
+                width: 100%;
+            }
+        }
+
         :root {
             --primary-color: #2563eb;
             --secondary-color: #1e40af;
@@ -291,77 +525,110 @@ $result = $stmt->get_result();
 
         /* Navigation Bar Styles */
         nav {
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
             margin-bottom: 2rem;
-            padding: 0 2rem;
+            padding: 0.5rem 2rem;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
         }
 
-        nav ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
-
-        nav li {
-            margin: 0 15px;
+        .logo-container {
             position: relative;
+            padding: 0.5rem 0;
         }
 
-        nav a {
-            color: #4b5563; /* Text color similar to home.php */
+        .logo-underline {
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #22c55e, #16a34a, #059669, transparent);
+            border-radius: 2px;
+            animation: shimmer 2s infinite;
+        }
+
+        .nav-links-container {
+            background: rgba(243, 244, 246, 0.7);
+            padding: 0.75rem;
+            border-radius: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-link {
+            color: #4b5563;
             text-decoration: none;
             font-weight: 500;
-            font-size: 1.1rem;
-            padding: 10px 0;
-            transition: color 0.3s ease;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
             position: relative;
+            overflow: hidden;
         }
 
-        nav a::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: #202020; /* Primary color similar to home.php */
-            transition: width 0.3s ease;
+        .nav-link:hover {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
         }
 
-        nav a:hover {
-            color: #202020; /* Primary color on hover */
+        .nav-link i {
+            transition: transform 0.3s ease;
         }
 
-        nav a:hover::after {
-            width: 100%;
+        .nav-link:hover i {
+            transform: scale(1.2);
         }
 
         .active-nav {
-            color: #202020; /* Active link color */
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.15);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
         }
 
-        .active-nav::after {
-            width: 100%;
+        /* Animations */
+        @keyframes glow {
+            0% {
+                text-shadow: 0 0 5px rgba(34, 197, 94, 0.2);
+            }
+            100% {
+                text-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
         }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            nav ul {
-                height: auto;
-                flex-direction: column;
-                padding: 1rem 0;
+            .logo-text {
+                font-size: 2.5rem;
             }
 
-            nav li {
-                margin: 10px 0;
+            .nav-links-container {
+                flex-direction: column;
+                width: 100%;
+                padding: 0.5rem;
+            }
+
+            .nav-link {
+                width: 100%;
+                margin: 0.25rem 0;
+                justify-content: center;
             }
         }
 
@@ -387,41 +654,206 @@ $result = $stmt->get_result();
         .package-card:nth-child(2) { animation-delay: 0.2s; }
         .package-card:nth-child(3) { animation-delay: 0.3s; }
         .package-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .btn-3d {
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+
+        .btn-3d:hover {
+            transform: translateY(-2px) translateZ(10px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-3d:active {
+            transform: translateY(1px) translateZ(5px);
+        }
+
+        .group:hover svg {
+            transform: translateX(-4px);
+        }
+
+        @media (max-width: 768px) {
+            .container .mb-6 {
+                padding: 0 1rem;
+            }
+        }
+
+        .back-btn {
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+        }
+
+        .back-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .back-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .back-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ffffff, transparent);
+            transform: scaleX(0);
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        .back-btn:hover::after {
+            transform: scaleX(1);
+        }
+
+        /* Add pulsing animation for the arrow */
+        @keyframes pulse {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        .back-btn:hover svg {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        /* Add subtle scale effect on click */
+        .back-btn:active {
+            transform: translateY(2px) scale(0.98);
+        }
+
+        /* Add responsive adjustments */
+        @media (max-width: 640px) {
+            .back-btn {
+                padding: 0.75rem 1.25rem;
+                font-size: 0.875rem;
+            }
+            
+            .back-btn svg {
+                width: 1rem;
+                height: 1rem;
+            }
+        }
+
+        /* Back Button Styles */
+        .nav-link.back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link.back-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .nav-link.back-btn i {
+            margin-right: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link.back-btn:hover i {
+            transform: translateX(-3px);
+        }
+
+        /* Responsive adjustment for back button */
+        @media (max-width: 768px) {
+            .header-container {
+                position: relative;
+                padding-top: 4rem;
+            }
+            
+            .nav-link.back-btn {
+                position: absolute;
+                top: 1rem;
+                left: 1rem;
+                z-index: 10;
+            }
+        }
     </style>
 </head>
 <body class="font-sans">
-    <div class="container">
-        <!-- Navigation Bar -->
-        <nav class="bg-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex justify-between items-center h-16">
-                    <div class="text-2xl font-bold text-green-600">TravelEase</div>
-                    <div class="hidden md:flex space-x-8">
-                        <a href="home.php" class="text-gray-700 hover:text-blue-600 <?php echo (basename($_SERVER['PHP_SELF']) == 'home.php') ? 'active-nav' : ''; ?>">Home</a>
-                        <a href="userpackages.php" class="text-gray-700 hover:text-blue-600 <?php echo (basename($_SERVER['PHP_SELF']) == 'userpackages.php') ? 'active-nav' : ''; ?>">Packages</a>
-                        <a href="my_bookings.php" class="text-gray-700 hover:text-blue-600 <?php echo (basename($_SERVER['PHP_SELF']) == 'my_bookings.php') ? 'active-nav' : ''; ?>">My Bookings</a>
-                        <a href="home.php#about" class="text-gray-700 hover:text-blue-600 <?php echo (basename($_SERVER['PHP_SELF']) == 'about.php') ? 'active-nav' : ''; ?>">About Us</a>
-                        <a href="home.php#contact" class="text-gray-700 hover:text-blue-600 <?php echo (basename($_SERVER['PHP_SELF']) == 'contact.php') ? 'active-nav' : ''; ?>">Contact</a>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <!-- Back Button -->
-                        <button onclick="window.history.back();" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Back</button>
-                    </div>
-                </div>
-            </div>
-        </nav>
-        <!-- End of Navigation Bar -->
-
-        <!-- Search Form -->
-        <form method="GET" action="userpackages.php" style="text-align: center; margin-bottom: 2rem;">
-            <input type="text" name="search" placeholder="Search packages..." value="<?php echo htmlspecialchars($searchQuery); ?>" style="padding: 0.5rem; width: 300px; border-radius: 0.5rem; border: 1px solid #ccc;">
-            <button type="submit" style="padding: 0.5rem 1rem; background-color: var(--primary-color); color: var(--white); border: none; border-radius: 0.5rem;">Search</button>
-        </form>
-        <!-- End of Search Form -->
-
-        <div class="page-header">
-            <h1>Explore Our Travel Packages</h1>
+    <!-- Header Container -->
+    <div class="header-container">
+        <!-- Existing Logo -->
+        <div class="logo-container">
+            <h1 class="logo-text">TravelEase</h1>
         </div>
+
+        <!-- Existing Navigation Menu -->
+        <nav class="nav-menu">
+            <a href="home.php" class="nav-link">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a>
+            <a href="userpackages.php" class="nav-link active">
+                <i class="fas fa-box"></i>
+                <span>Packages</span>
+            </a>
+            <a href="my_bookings.php" class="nav-link">
+                <i class="fas fa-calendar-check"></i>
+                <span>My Bookings</span>
+            </a>
+            <a href="home.php#about" class="nav-link">
+                <i class="fas fa-info-circle"></i>
+                <span>About Us</span>
+            </a>
+            <a href="home.php#enquiry" class="nav-link">
+                <i class="fas fa-envelope"></i>
+                <span>Contact</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Back Button - Aligned with header -->
+    <div style="max-width: 1200px; margin: 1rem auto; padding: 0 2rem;">
+        <a href="javascript:history.back()" class="nav-link" style="
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.2);
+            width: fit-content;">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back</span>
+        </a>
+    </div>
+
+    <!-- Search Container -->
+    <form action="userpackages.php" method="GET" class="search-container">
+        <input type="text" 
+               name="search" 
+               class="search-input" 
+               placeholder="Search for travel packages..." 
+               value="<?php echo htmlspecialchars($searchQuery); ?>">
+        <button type="submit" class="search-button">
+            <i class="fas fa-search"></i> Search
+        </button>
+    </form>
+
+    <!-- Page Title -->
+    <h1 class="page-title">Explore Our Travel Packages</h1>
+
+    <div class="container">
         <?php if ($errorMessage): ?>
             <div class="error-message">
                 <?php echo htmlspecialchars($errorMessage); ?>

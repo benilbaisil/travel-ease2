@@ -1,5 +1,16 @@
 <?php
 session_start();
+
+// If already logged in, redirect to appropriate page
+if (isset($_SESSION['user_id'])) {
+    if ($_SESSION['user_role'] == 'Admin' || $_SESSION['user_role'] == 'Staff') {
+        header("Location: admin_dashboard.php"); // Redirect to dashboard instead of packages
+    } else {
+        header("Location: index.php");
+    }
+    exit();
+}
+
 require_once 'db_connect.php';
 
 $servername = "localhost";
