@@ -673,6 +673,18 @@ input:focus, select:focus {
                                         </svg>
                                         Contains at least one number
                                     </li>
+                                    <li id="uppercaseCheck" class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                        Contains at least one uppercase letter
+                                    </li>
+                                    <li id="lowercaseCheck" class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                        Contains at least one lowercase letter
+                                    </li>
                                 </ul>
                             </div>
                             <div>
@@ -888,6 +900,56 @@ input:focus, select:focus {
         document.getElementById('updateProfileForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Password validation
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+            
+            // Reset error messages
+            document.getElementById('currentPasswordError').classList.add('hidden');
+            document.getElementById('newPasswordError').classList.add('hidden');
+            document.getElementById('confirmPasswordError').classList.add('hidden');
+            
+            // Validate current password if provided
+            if (currentPassword && currentPassword.length < 8) {
+                document.getElementById('currentPasswordError').textContent = 'Current password must be at least 8 characters long';
+                document.getElementById('currentPasswordError').classList.remove('hidden');
+                return;
+            }
+            
+            // Validate new password if provided
+            if (newPassword) {
+                if (newPassword.length < 8) {
+                    document.getElementById('newPasswordError').textContent = 'New password must be at least 8 characters long';
+                    document.getElementById('newPasswordError').classList.remove('hidden');
+                    return;
+                }
+                
+                if (!/\d/.test(newPassword)) {
+                    document.getElementById('newPasswordError').textContent = 'New password must contain at least one number';
+                    document.getElementById('newPasswordError').classList.remove('hidden');
+                    return;
+                }
+                
+                if (!/[A-Z]/.test(newPassword)) {
+                    document.getElementById('newPasswordError').textContent = 'New password must contain at least one uppercase letter';
+                    document.getElementById('newPasswordError').classList.remove('hidden');
+                    return;
+                }
+                
+                if (!/[a-z]/.test(newPassword)) {
+                    document.getElementById('newPasswordError').textContent = 'New password must contain at least one lowercase letter';
+                    document.getElementById('newPasswordError').classList.remove('hidden');
+                    return;
+                }
+                
+                if (newPassword !== confirmNewPassword) {
+                    document.getElementById('confirmPasswordError').textContent = 'New passwords do not match';
+                    document.getElementById('confirmPasswordError').classList.remove('hidden');
+                    return;
+                }
+            }
+            
             const formData = new FormData(this);
             
             fetch('update_profile.php', {
@@ -908,6 +970,48 @@ input:focus, select:focus {
                 console.error('Error:', error);
                 alert('An error occurred while updating the profile');
             });
+        });
+
+        // Add real-time password validation
+        document.getElementById('newPassword').addEventListener('input', function() {
+            const password = this.value;
+            const lengthCheck = document.getElementById('lengthCheck');
+            const numberCheck = document.getElementById('numberCheck');
+            const uppercaseCheck = document.getElementById('uppercaseCheck');
+            const lowercaseCheck = document.getElementById('lowercaseCheck');
+            
+            // Update check icons
+            if (password.length >= 8) {
+                lengthCheck.querySelector('svg').setAttribute('stroke', 'green');
+                lengthCheck.querySelector('path').setAttribute('d', 'M5 13l4 4L19 7');
+            } else {
+                lengthCheck.querySelector('svg').setAttribute('stroke', 'currentColor');
+                lengthCheck.querySelector('path').setAttribute('d', 'M6 18L18 6M6 6l12 12');
+            }
+            
+            if (/\d/.test(password)) {
+                numberCheck.querySelector('svg').setAttribute('stroke', 'green');
+                numberCheck.querySelector('path').setAttribute('d', 'M5 13l4 4L19 7');
+            } else {
+                numberCheck.querySelector('svg').setAttribute('stroke', 'currentColor');
+                numberCheck.querySelector('path').setAttribute('d', 'M6 18L18 6M6 6l12 12');
+            }
+            
+            if (/[A-Z]/.test(password)) {
+                uppercaseCheck.querySelector('svg').setAttribute('stroke', 'green');
+                uppercaseCheck.querySelector('path').setAttribute('d', 'M5 13l4 4L19 7');
+            } else {
+                uppercaseCheck.querySelector('svg').setAttribute('stroke', 'currentColor');
+                uppercaseCheck.querySelector('path').setAttribute('d', 'M6 18L18 6M6 6l12 12');
+            }
+            
+            if (/[a-z]/.test(password)) {
+                lowercaseCheck.querySelector('svg').setAttribute('stroke', 'green');
+                lowercaseCheck.querySelector('path').setAttribute('d', 'M5 13l4 4L19 7');
+            } else {
+                lowercaseCheck.querySelector('svg').setAttribute('stroke', 'currentColor');
+                lowercaseCheck.querySelector('path').setAttribute('d', 'M6 18L18 6M6 6l12 12');
+            }
         });
 
         function showEnquiryResponses() {
